@@ -1,36 +1,39 @@
 # Fabric and ADO Skills
 
 
+
+
 An independent, public-safe starter kit for governing Microsoft Fabric changes with Azure DevOps. It combines small agent skills, deterministic validation, evidence-based review, and human-controlled promotion.
+
+
 
 
 > This is a community project. It is not affiliated with, endorsed by, or supported by Microsoft. It contains no tenant IDs, credentials, customer data, or production automation defaults.
 
 
+
+
 ## The operating model
 
 
-~~~mermaid
-flowchart TB
-  A[Feature branch] --> B[Pull request]
-  B --> C[Validate artifacts, secrets, and tests]
-  C --> D[Build sanitized release evidence]
-  D --> E[Human review]
-  E --> F[Sync Fabric Dev]
-  F --> G[Smoke and parity checks]
-  G --> H{Test / Prod approval}
-  H --> I[Sync approved workspace]
-  I --> J[Monitor and support triage]
 
-  D -. Advisory review .-> K[Independent AI review]
-  K -. Findings .-> E
+
+~~~mermaid
+flowchart LR
+  A["1. Change<br/>Feature branch and pull request"] --> B["2. Validate<br/>Artifacts, secrets, and tests"]
+  B --> C["3. Review<br/>Sanitized release evidence and human decision"]
+  C --> D["4. Sync Dev<br/>Fabric Git sync, smoke, and parity"]
+  D --> E{"5. Promote<br/>Test / Prod approval"}
+  E --> F["6. Operate<br/>Workspace sync, monitoring, and triage"]
+
+  K["Independent AI review<br/>(advisory)"] -. Findings .-> C
 ~~~
 
-
-Deterministic checks and Azure DevOps resource approvals decide whether a release may proceed. AI review is advisory; it can identify risks and draft recommendations, but it does not receive deployment authority. A failed check, declined approval, or Fabric conflict stops promotion and returns the work to a new pull request.
-
+Deterministic checks and Azure DevOps resource approvals decide whether a release may proceed. The dashed AI input is advisory: it can identify risks and draft recommendations, but it never receives deployment authority. A failed check, declined approval, or Fabric conflict stops promotion and returns the work to a new pull request.
 
 ## What is included
+
+
 
 
 - Six focused skills for Fabric planning, Git synchronization, Azure DevOps releases, verification, support triage, and cross-model review.
@@ -41,7 +44,11 @@ Deterministic checks and Azure DevOps resource approvals decide whether a releas
 - A cross-verification packet and reviewer profile pattern for Claude Code, Fable 5, Sol 5.6, or another approved model.
 
 
+
+
 ## Quick start
+
+
 
 
 1. Read [AGENTS.md](AGENTS.md), then choose the relevant skill in [skills](skills).
@@ -52,22 +59,6 @@ Deterministic checks and Azure DevOps resource approvals decide whether a releas
 6. Run the validation pipeline on a pull request. Use the Dev/Test/Prod sync pipelines only after the matching Fabric workspace is connected to the corresponding branch.
 
 
+
+
 For a real tenant, read [environment contract](common/environment-contract.md) and [Fabric Git release flow](docs/fabric-git-release-flow.md) before enabling execution.
-
-
-## Safety boundaries
-
-
-- Never put tokens, passwords, connection strings, customer data, or unredacted logs in Git, evidence packages, or model prompts.
-- Never infer a production workspace, branch, or approval. Stop if the target is ambiguous.
-- Never auto-resolve a Fabric conflict. Reconcile it through a pull request or an explicitly approved recovery run.
-- Require an Azure DevOps environment approval for Test and Prod. Use protected resource checks, not a YAML-only condition.
-- Treat output from Claude Code, Fable 5, Sol 5.6, or any other model as advisory until a human and deterministic checks approve the release.
-
-
-## Repository map
-
-
-| Path | Purpose |
-| --- | --- |
-| [skills](skills) | Compact, tool-agnostic operating instructions for agents |
