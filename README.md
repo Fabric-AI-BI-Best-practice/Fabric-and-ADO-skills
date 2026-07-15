@@ -34,10 +34,21 @@ Deterministic checks and Azure DevOps resource approvals decide whether a releas
 2. Adopt the branch progression feature slash -> dev -> test -> main. Map each long-lived branch to a separate Fabric workspace.
 3. Create Azure DevOps environments named fabric-dev, fabric-test, and fabric-prod. Configure approvals, branch controls, and exclusive locks outside YAML.
 4. Create an Azure DevOps variable group per environment for non-secret configuration such as FABRIC_WORKSPACE_ID. Configure an Entra-backed service connection separately; never add a credential to this repository.
-5. Copy the YAML files in [templates/azure-pipelines](templates/azure-pipelines) into the target Fabric solution repository, replace the intentionally obvious service-connection placeholder, and register each pipeline in Azure DevOps.
+5. Copy [scripts](scripts), [tests](tests), and the selected YAML files in [templates/azure-pipelines](templates/azure-pipelines) into the target Fabric solution repository. Put its deployable Fabric item definitions under `fabric/`, replace the intentionally obvious service-connection placeholder, and register each pipeline in Azure DevOps.
 6. Run the validation pipeline on a pull request. Use the Dev/Test/Prod sync pipelines only after the matching Fabric workspace is connected to the corresponding branch.
 
 For a real tenant, read [environment contract](common/environment-contract.md) and [Fabric Git release flow](docs/fabric-git-release-flow.md) before enabling execution.
+
+### Template mode and solution mode
+
+This starter kit intentionally has no deployable Fabric items, so its own validation runs in template mode. A copied solution repository must use `--require-fabric-items`, which is already enabled in the supplied Azure Pipelines templates. Before connecting any tenant, verify the starter locally with:
+
+~~~powershell
+python scripts/validate_fabric_repository.py --root .
+python -m unittest discover -s tests -p "test_*.py" -v
+~~~
+
+The repository also includes a read-only GitHub Actions validation workflow. In a GitHub-hosted fork or copy, make that check required before merge.
 
 ## Safety boundaries
 

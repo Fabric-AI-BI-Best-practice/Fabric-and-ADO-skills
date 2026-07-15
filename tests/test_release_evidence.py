@@ -5,6 +5,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from copy import deepcopy
 from pathlib import Path
 
 
@@ -29,6 +30,20 @@ class ReleaseEvidenceTests(unittest.TestCase):
         record["client_secret"] = "not-a-real-secret"
         errors = validate_release_evidence.validate(record)
         self.assertTrue(any("sensitive key" in error for error in errors))
+
+    def test_unexpected_and_nested_fields_are_rejected(self) -> None:
+        record = deepcopy(self.example)
+        record["rawLogs"] = ["This field is not part of the public-safe contract."]
+        record["validations"][0]["rawLog"] = "This nested field is not allowed either."
+        errors = validate_release_evidence.validate(record)
+        self.assertTrue(any("$.rawLogs: unexpected field" in error for error in errors))
+        self.assertTrue(any("validations[0].rawLog: unexpected field" in error for error in errors))
+
+    def test_sensitive_values_are_rejected(self) -> None:
+        record = deepcopy(self.example)
+        record["changeSummary"] = "client" + "_secret" + "=" + "not-a-real-secret-value"
+        errors = validate_release_evidence.validate(record)
+        self.assertTrue(any("secret-like assignment" in error for error in errors))
 
     def test_create_then_validate(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -127,6 +142,74 @@ class RepositoryValidationTests(unittest.TestCase):
             check=False,
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_large_artifact_with_secret_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            temporary_path = Path(temporary)
+            artifact = temporary_path / "fabric" / "large.notebook"
+            artifact.parent.mkdir()
+            artifact.write_text(
+                "x" * 1_000_001 + "\naccess_token=not-a-real-token-value\n",
+                encoding="utf-8",
+            )
+            result = subprocess.run(
+                [sys.executable, str(SCRIPTS / "validate_fabric_repository.py"), "--root", str(temporary_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("possible inline secret assignment", result.stdout)
+
+    def test_non_utf8_fabric_artifact_is_rejected_in_solution_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            temporary_path = Path(temporary)
+            artifact = temporary_path / "fabric" / "item.notebook"
+            artifact.parent.mkdir()
+            artifact.write_bytes(b"\xff\xfe\x00\x01")
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "validate_fabric_repository.py"),
+                    "--root",
+                    str(temporary_path),
+                    "--require-fabric-items",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("unable to scan Fabric artifact as UTF-8 text", result.stdout)
+
+
+class SupportPacketTests(unittest.TestCase):
+    def test_secret_like_summary_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "support-packet.json"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "create_support_packet.py"),
+                    "--incident-id",
+                    "test-incident-001",
+                    "--severity",
+                    "Sev3",
+                    "--environment",
+                    "test",
+                    "--workspace-id",
+                    "00000000-0000-0000-0000-000000000000",
+                    "--sanitized-summary",
+                    "Authorization: Bearer not-a-real-token-value",
+                    "--out",
+                    str(output),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("secret-like values", result.stderr)
 
 
 if __name__ == "__main__":

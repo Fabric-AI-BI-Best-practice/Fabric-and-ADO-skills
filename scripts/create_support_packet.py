@@ -8,6 +8,8 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
+from validate_release_evidence import find_sensitive_values
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -22,8 +24,11 @@ def main() -> int:
     parser.add_argument("--owner", default="unassigned")
     args = parser.parse_args()
 
-    if "-----BEGIN" in args.sanitized_summary or "://" in args.sanitized_summary:
-        parser.error("Use a sanitized summary without private-key material or raw URLs.")
+    sensitive_findings = find_sensitive_values(args.sanitized_summary, "$.summary")
+    if sensitive_findings or "://" in args.sanitized_summary:
+        parser.error(
+            "Use a sanitized summary without credentials, private-key material, secret-like values, or raw URLs."
+        )
 
     packet = {
         "incidentId": args.incident_id,

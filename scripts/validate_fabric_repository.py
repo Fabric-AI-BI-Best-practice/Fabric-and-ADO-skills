@@ -12,6 +12,9 @@ from pathlib import Path
 
 SKIP_DIRECTORIES = {".git", ".venv", "__pycache__", "out", "node_modules"}
 JSON_EXTENSIONS = {".json", ".platform", ".ipynb"}
+TEXT_SCAN_CHUNK_SIZE = 64 * 1024
+TEXT_SCAN_OVERLAP = 512
+MAX_JSON_PARSE_BYTES = 10 * 1024 * 1024
 PRIVATE_KEY_PATTERN = re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----")
 SECRET_ASSIGNMENT_PATTERN = re.compile(
     r"(?i)\b(?:client[_-]?secret|password|api[_-]?key|access[_-]?token|connection[_-]?string)"
@@ -30,6 +33,27 @@ def check_json(path: Path, errors: list[str]) -> None:
         errors.append(f"{path}: expected UTF-8 JSON-compatible text")
     except json.JSONDecodeError as error:
         errors.append(f"{path}: invalid JSON-compatible file: {error.msg} at line {error.lineno}")
+
+
+def check_text_for_secrets(path: Path, relative: Path, errors: list[str]) -> bool:
+    """Scan UTF-8 text incrementally so large artifacts are never exempt from secret checks."""
+    try:
+        with path.open("r", encoding="utf-8") as source:
+            tail = ""
+            found_private_key = False
+            found_assignment = False
+            while chunk := source.read(TEXT_SCAN_CHUNK_SIZE):
+                text = tail + chunk
+                if not found_private_key and PRIVATE_KEY_PATTERN.search(text):
+                    errors.append(f"{relative}: private-key material detected")
+                    found_private_key = True
+                if not found_assignment and SECRET_ASSIGNMENT_PATTERN.search(text):
+                    errors.append(f"{relative}: possible inline secret assignment detected")
+                    found_assignment = True
+                tail = text[-TEXT_SCAN_OVERLAP:]
+    except UnicodeDecodeError:
+        return False
+    return True
 
 
 def main() -> int:
@@ -62,20 +86,21 @@ def main() -> int:
     for path in root.rglob("*"):
         if not path.is_file() or is_skipped(path.relative_to(root)):
             continue
-        if path.stat().st_size > 1_000_000:
-            warnings.append(f"{path.relative_to(root)}: skipped secret scan because file exceeds 1 MB")
-            continue
-        try:
-            text = path.read_text(encoding="utf-8")
-        except UnicodeDecodeError:
-            continue
         relative = path.relative_to(root)
-        if PRIVATE_KEY_PATTERN.search(text):
-            errors.append(f"{relative}: private-key material detected")
-        if SECRET_ASSIGNMENT_PATTERN.search(text):
-            errors.append(f"{relative}: possible inline secret assignment detected")
+        if not check_text_for_secrets(path, relative, errors):
+            if args.require_fabric_items and fabric_root in path.parents:
+                errors.append(f"{relative}: unable to scan Fabric artifact as UTF-8 text")
+            else:
+                warnings.append(f"{relative}: skipped secret scan because file is not UTF-8 text")
+            continue
         if path.suffix.lower() in JSON_EXTENSIONS:
-            check_json(path, errors)
+            if path.stat().st_size > MAX_JSON_PARSE_BYTES:
+                warnings.append(
+                    f"{relative}: skipped JSON syntax validation because file exceeds "
+                    f"{MAX_JSON_PARSE_BYTES // (1024 * 1024)} MB; secret scan still ran"
+                )
+            else:
+                check_json(path, errors)
 
     for warning in warnings:
         print(f"[WARN] {warning}")
