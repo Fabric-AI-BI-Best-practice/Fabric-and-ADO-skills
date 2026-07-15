@@ -30,8 +30,10 @@
     "pipelineRun": { "type": "string" },
     "validations": {
       "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "required": ["name", "status"],
         "properties": {
           "name": { "type": "string", "minLength": 1 },
@@ -42,8 +44,10 @@
     },
     "approvals": {
       "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "required": ["kind", "status"],
         "properties": {
           "kind": { "type": "string", "minLength": 1 },
@@ -54,6 +58,7 @@
     },
     "fabricOperation": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["status"],
       "properties": {
         "operationId": { "type": ["string", "null"] },
@@ -63,13 +68,16 @@
     },
     "verification": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["status", "checks"],
       "properties": {
         "status": { "enum": ["pending", "passed", "failed", "escalate", "skipped"] },
         "checks": {
           "type": "array",
+          "minItems": 1,
           "items": {
             "type": "object",
+            "additionalProperties": false,
             "required": ["name", "status"],
             "properties": {
               "name": { "type": "string", "minLength": 1 },

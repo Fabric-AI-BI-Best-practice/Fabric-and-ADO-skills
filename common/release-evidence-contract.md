@@ -17,6 +17,8 @@ A release package proves what was proposed, checked, approved, deployed, and obs
 
 Use [templates/release-evidence.schema.json](../templates/release-evidence.schema.json) and validate with [scripts/validate_release_evidence.py](../scripts/validate_release_evidence.py).
 
+The contract is intentionally closed: undeclared fields and common credential-bearing values are rejected so an evidence package cannot gradually become a raw-log archive.
+
 ## Evidence hygiene
 
 - Replace display names, row-level values, query text, URLs containing credentials, and access tokens with safe identifiers before attaching evidence.

@@ -8,20 +8,16 @@ An independent, public-safe starter kit for governing Microsoft Fabric changes w
 
 ~~~mermaid
 flowchart LR
-  A[Feature branch] --> B[Pull request]
-  B --> C[Artifact + secret checks]
-  C --> D[Evidence package]
-  D --> E[Independent AI reviews]
-  E --> F[Human review]
-  F --> G[Sync Fabric Dev]
-  G --> H[Smoke + parity checks]
-  H --> I[Protected Test / Prod approval]
-  I --> J[Sync target workspace]
-  J --> K[Monitor and support triage]
-  K --> D
+  A["1. Change<br/>Feature branch and pull request"] --> B["2. Validate<br/>Artifacts, secrets, and tests"]
+  B --> C["3. Review<br/>Sanitized release evidence and human decision"]
+  C --> D["4. Sync Dev<br/>Fabric Git sync, smoke, and parity"]
+  D --> E{"5. Promote<br/>Test / Prod approval"}
+  E --> F["6. Operate<br/>Workspace sync, monitoring, and triage"]
+
+  K["Independent AI review<br/>(advisory)"] -. Findings .-> C
 ~~~
 
-Deterministic checks and Azure DevOps resource approvals decide whether a release may proceed. AI reviewers can find risks and draft recommendations; they do not receive deployment authority.
+Deterministic checks and Azure DevOps resource approvals decide whether a release may proceed. The dashed AI input is advisory: it can identify risks and draft recommendations, but it never receives deployment authority. A failed check, declined approval, or Fabric conflict stops promotion and returns the work to a new pull request.
 
 ## What is included
 
@@ -38,10 +34,21 @@ Deterministic checks and Azure DevOps resource approvals decide whether a releas
 2. Adopt the branch progression feature slash -> dev -> test -> main. Map each long-lived branch to a separate Fabric workspace.
 3. Create Azure DevOps environments named fabric-dev, fabric-test, and fabric-prod. Configure approvals, branch controls, and exclusive locks outside YAML.
 4. Create an Azure DevOps variable group per environment for non-secret configuration such as FABRIC_WORKSPACE_ID. Configure an Entra-backed service connection separately; never add a credential to this repository.
-5. Copy the YAML files in [templates/azure-pipelines](templates/azure-pipelines) into the target Fabric solution repository, replace the intentionally obvious service-connection placeholder, and register each pipeline in Azure DevOps.
+5. Copy [scripts](scripts), [tests](tests), and the selected YAML files in [templates/azure-pipelines](templates/azure-pipelines) into the target Fabric solution repository. Put its deployable Fabric item definitions under `fabric/`, replace the intentionally obvious service-connection placeholder, and register each pipeline in Azure DevOps.
 6. Run the validation pipeline on a pull request. Use the Dev/Test/Prod sync pipelines only after the matching Fabric workspace is connected to the corresponding branch.
 
 For a real tenant, read [environment contract](common/environment-contract.md) and [Fabric Git release flow](docs/fabric-git-release-flow.md) before enabling execution.
+
+### Template mode and solution mode
+
+This starter kit intentionally has no deployable Fabric items, so its own validation runs in template mode. A copied solution repository must use `--require-fabric-items`, which is already enabled in the supplied Azure Pipelines templates. Before connecting any tenant, verify the starter locally with:
+
+~~~powershell
+python scripts/validate_fabric_repository.py --root .
+python -m unittest discover -s tests -p "test_*.py" -v
+~~~
+
+The repository also includes a read-only GitHub Actions validation workflow. In a GitHub-hosted fork or copy, make that check required before merge.
 
 ## Safety boundaries
 
