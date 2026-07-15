@@ -1,0 +1,12 @@
+{
+  "incidentId": "INC-EXAMPLE-001",
+  "severity": "Sev3",
+  "timestampUtc": "2026-07-14T00:00:00Z",
+  "environment": "test",
+  "workspaceId": "00000000-0000-0000-0000-000000000000",
+  "summary": "Sanitized example: post-deploy smoke check did not complete within the expected window.",
+  "pipelineRun": "https://dev.azure.com/example/project/_build/results?buildId=2",
+  "fabricOperationId": "00000000-0000-0000-0000-000000000001",
+  "status": "triage",
+  "nextAction": "Collect the authorized operation result and assign the data-platform on-call owner."
+}

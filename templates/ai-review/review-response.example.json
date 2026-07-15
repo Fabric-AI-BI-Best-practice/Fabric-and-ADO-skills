@@ -1,0 +1,14 @@
+{
+  "reviewer": "independent-reviewer-a",
+  "verdict": "revise",
+  "confidence": "high",
+  "findings": [
+    {
+      "severity": "blocker",
+      "statement": "The plan has no post-deploy parity threshold for a Lakehouse transformation.",
+      "evidence": "changePlan.affectedItemTypes and evidence.verification.checks",
+      "recommendedAction": "Add a bounded row-count and null-rate parity check before Test promotion."
+    }
+  ],
+  "recommendedHumanAction": "Update the validation plan, rerun deterministic checks, then request a fresh review."
+}

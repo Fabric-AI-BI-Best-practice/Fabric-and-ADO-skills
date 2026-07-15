@@ -1,0 +1,46 @@
+{
+  "reviewId": "review-example-001",
+  "reviewerRole": "independent-risk-reviewer",
+  "allowedDataClassification": "public-or-sanitized",
+  "questions": [
+    "Does the plan have a valid target, validation, and recovery path?",
+    "Do the supplied checks cover the stated risk?"
+  ],
+  "changePlan": {
+    "riskLevel": "moderate",
+    "summary": "Add a backward-compatible transformation and validate row-count parity.",
+    "affectedItemTypes": ["Notebook", "Lakehouse"],
+    "target": {
+      "environment": "test",
+      "workspaceId": "00000000-0000-0000-0000-000000000000",
+      "sourceBranch": "refs/heads/test",
+      "commit": "0000000000000000000000000000000000000000"
+    },
+    "artifactMetadata": {
+      "changedFiles": ["fabric/example.Notebook/notebook-content.py"],
+      "dataContractImpact": "No breaking schema change planned.",
+      "securityImpact": "No identity, RLS, or OLS change planned."
+    }
+  },
+  "evidence": {
+    "commit": "0000000000000000000000000000000000000000",
+    "validations": [
+      { "name": "artifact-validation", "status": "passed" },
+      { "name": "unit-tests", "status": "passed" }
+    ],
+    "verification": {
+      "status": "pending",
+      "checks": [
+        { "name": "row-count-parity", "status": "pending" }
+      ]
+    }
+  },
+  "instructions": [
+    "Return only the response schema.",
+    "Cite evidence IDs or policy references for each finding.",
+    "Do not recommend deploying if deterministic controls are incomplete.",
+    "Do not include or request secrets, records, or raw logs."
+  ],
+  "approvalPolicy": "Protected Azure DevOps environment with named human approvers.",
+  "recoveryPlan": "Stop promotion, preserve evidence, and use the approved recovery owner."
+}

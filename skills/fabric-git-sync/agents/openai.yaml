@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fabric Git Sync"
+  short_description: "Safely synchronize Fabric workspaces from Git"
+  default_prompt: "Use $fabric-git-sync to safely sync a Fabric workspace from Git."

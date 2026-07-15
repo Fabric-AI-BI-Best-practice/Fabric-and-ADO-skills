@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Fabric and Azure DevOps release evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "releaseId",
+    "timestampUtc",
+    "environment",
+    "workspaceId",
+    "sourceBranch",
+    "commit",
+    "riskLevel",
+    "changeSummary",
+    "validations",
+    "approvals",
+    "fabricOperation",
+    "verification",
+    "recoveryPlan"
+  ],
+  "properties": {
+    "releaseId": { "type": "string", "minLength": 1 },
+    "timestampUtc": { "type": "string", "minLength": 1 },
+    "environment": { "type": "string", "minLength": 1 },
+    "workspaceId": { "type": "string", "minLength": 1 },
+    "sourceBranch": { "type": "string", "minLength": 1 },
+    "commit": { "type": "string", "minLength": 1 },
+    "riskLevel": { "enum": ["low", "moderate", "high"] },
+    "changeSummary": { "type": "string", "minLength": 1 },
+    "pipelineRun": { "type": "string" },
+    "validations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "status"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "status": { "enum": ["pending", "passed", "failed", "skipped"] },
+          "evidence": { "type": "string" }
+        }
+      }
+    },
+    "approvals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "status"],
+        "properties": {
+          "kind": { "type": "string", "minLength": 1 },
+          "status": { "enum": ["pending", "approved", "rejected", "not-required"] },
+          "reference": { "type": "string" }
+        }
+      }
+    },
+    "fabricOperation": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "operationId": { "type": ["string", "null"] },
+        "status": { "enum": ["not-run", "planned", "running", "succeeded", "failed", "unknown"] },
+        "details": { "type": "string" }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "required": ["status", "checks"],
+      "properties": {
+        "status": { "enum": ["pending", "passed", "failed", "escalate", "skipped"] },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "status"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "status": { "enum": ["pending", "passed", "failed", "skipped"] },
+              "evidence": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "recoveryPlan": { "type": "string", "minLength": 1 }
+  }
+}

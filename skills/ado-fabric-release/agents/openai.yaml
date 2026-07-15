@@ -1,0 +1,4 @@
+interface:
+  display_name: "ADO Fabric Release"
+  short_description: "Run governed Azure DevOps Fabric releases"
+  default_prompt: "Use $ado-fabric-release to prepare a governed Fabric release in Azure DevOps."

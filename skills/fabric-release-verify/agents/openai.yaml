@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fabric Release Verify"
+  short_description: "Verify Fabric releases with reproducible evidence"
+  default_prompt: "Use $fabric-release-verify to verify a Fabric release and capture evidence."

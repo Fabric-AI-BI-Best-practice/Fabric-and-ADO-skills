@@ -1,0 +1,10 @@
+{
+  "environment": "dev",
+  "fabricWorkspaceId": "<workspace-guid>",
+  "connectedBranch": "refs/heads/dev",
+  "azureDevOpsEnvironment": "fabric-dev",
+  "identity": "fabric-release-dev",
+  "dataClassificationForEvidence": "public-or-sanitized",
+  "requiresHumanApproval": false,
+  "recoveryOwner": "data-platform-on-call"
+}

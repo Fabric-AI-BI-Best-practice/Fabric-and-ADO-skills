@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fabric Change Plan"
+  short_description: "Plan a safe, evidence-backed Fabric change"
+  default_prompt: "Use $fabric-change-plan to plan a safe change to a Fabric workspace."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fabric Support Triage"
+  short_description: "Create safe, auditable Fabric incident packets"
+  default_prompt: "Use $support-incident-triage to triage a Fabric support incident safely."

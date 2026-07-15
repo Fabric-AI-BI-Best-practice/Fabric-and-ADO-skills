@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Release Review"
+  short_description: "Review release evidence without deployment authority"
+  default_prompt: "Use $ai-release-review to independently review a Fabric release evidence package."

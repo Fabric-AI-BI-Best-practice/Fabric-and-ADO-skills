@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AI release review response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["reviewer", "verdict", "confidence", "findings", "recommendedHumanAction"],
+  "properties": {
+    "reviewer": { "type": "string", "minLength": 1 },
+    "verdict": { "enum": ["approve", "revise", "escalate"] },
+    "confidence": { "enum": ["low", "medium", "high"] },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["severity", "statement", "evidence"],
+        "properties": {
+          "severity": { "enum": ["info", "warning", "blocker"] },
+          "statement": { "type": "string", "minLength": 1 },
+          "evidence": { "type": "string", "minLength": 1 },
+          "recommendedAction": { "type": "string" }
+        }
+      }
+    },
+    "recommendedHumanAction": { "type": "string", "minLength": 1 }
+  }
+}

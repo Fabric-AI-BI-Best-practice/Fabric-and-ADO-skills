@@ -1,0 +1,21 @@
+{
+  "profiles": [
+    {
+      "role": "authoring-reviewer",
+      "label": "Claude Code",
+      "provider": "configure-before-use",
+      "modelId": "confirm-with-organization",
+      "allowedDataClassification": "public-or-sanitized",
+      "mayDeploy": false
+    },
+    {
+      "role": "independent-reviewer",
+      "label": "Fable 5 or Sol 5.6",
+      "provider": "configure-before-use",
+      "modelId": "confirm-with-organization",
+      "allowedDataClassification": "public-or-sanitized",
+      "mayDeploy": false
+    }
+  ],
+  "decisionRule": "Deterministic checks and protected Azure DevOps approvals remain the release authority."
+}

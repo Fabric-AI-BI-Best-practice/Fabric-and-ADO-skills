@@ -1,0 +1,70 @@
+# Synchronize the Production Fabric workspace after an approved merge to main.
+# Configure approvals, branch control, required templates, and an exclusive lock on fabric-prod outside YAML.
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - fabric/**
+      - scripts/**
+      - tests/**
+
+pr: none
+
+variables:
+  - group: fabric-prod
+
+stages:
+  - stage: Validate
+    displayName: Validate source
+    jobs:
+      - job: ValidateFabric
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - checkout: self
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: "3.12"
+          - script: python scripts/validate_fabric_repository.py --root . --require-fabric-items
+          - script: python -m unittest discover -s tests -p "test_*.py"
+
+  - stage: SyncProd
+    displayName: Synchronize Production workspace
+    dependsOn: Validate
+    lockBehavior: sequential
+    jobs:
+      - deployment: SyncFabricProd
+        displayName: Sync Fabric Production from Git
+        environment: fabric-prod
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                - task: UsePythonVersion@0
+                  inputs:
+                    versionSpec: "3.12"
+                - task: AzureCLI@2
+                  displayName: Get short-lived Fabric token and sync Production
+                  inputs:
+                    azureSubscription: "REPLACE_WITH_PROTECTED_FABRIC_PROD_SERVICE_CONNECTION"
+                    scriptType: pscore
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      $ErrorActionPreference = "Stop"
+                      $fabricToken = az account get-access-token --resource https://api.fabric.microsoft.com --query accessToken --output tsv
+                      if ([string]::IsNullOrWhiteSpace($fabricToken)) { throw "Could not acquire a Fabric access token." }
+                      & "$(Build.SourcesDirectory)/scripts/sync-fabric-from-git.ps1" -WorkspaceId "$(FABRIC_WORKSPACE_ID)" -AccessToken $fabricToken -ExpectedRemoteCommit "$(Build.SourceVersion)" -Execute -AllowIncomingOverride | Set-Content -Path "$(Build.ArtifactStagingDirectory)/sync-result.json" -Encoding utf8
+                - pwsh: |
+                    python scripts/create_release_evidence.py --release-id "prod-$(Build.BuildId)" --environment "prod" --workspace-id "$(FABRIC_WORKSPACE_ID)" --source-branch "$(Build.SourceBranch)" --commit "$(Build.SourceVersion)" --risk-level "high" --change-summary "Approved Production branch synchronization" --validation-status "passed" --approval-kind "fabric-prod" --approval-status "approved" --pipeline-run "$(Build.BuildUri)" --sync-result "$(Build.ArtifactStagingDirectory)/sync-result.json" --out "$(Build.ArtifactStagingDirectory)/release-evidence.json"
+                    python scripts/validate_release_evidence.py --file "$(Build.ArtifactStagingDirectory)/release-evidence.json"
+                  displayName: Create Production release evidence
+                - task: PublishPipelineArtifact@1
+                  displayName: Publish Production release evidence
+                  condition: always()
+                  inputs:
+                    targetPath: "$(Build.ArtifactStagingDirectory)"
+                    artifact: prod-release-evidence
